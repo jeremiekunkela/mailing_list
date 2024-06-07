@@ -1,8 +1,10 @@
 use mongodb::{Client, Collection, Database};
+use std::sync::Arc;
 use crate::models::{User, MailingList};
 
+#[derive(Clone)]
 pub struct MongoRepo {
-    pub db: Database,
+    pub db: Arc<Database>,
 }
 
 impl MongoRepo {
@@ -11,7 +13,7 @@ impl MongoRepo {
             .await
             .expect("Failed to initialize client.");
         let db = client.database("mailing_list");
-        MongoRepo { db }
+        MongoRepo { db: Arc::new(db) }
     }
 
     pub fn get_users_collection(&self) -> Collection<User> {
