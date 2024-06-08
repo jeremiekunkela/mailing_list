@@ -12,16 +12,26 @@ fn is_valid_email(email: &str) -> bool {
 
 #[post("/signup")]
 async fn signup(repo: web::Data<MongoRepo>, user: web::Json<User>) -> impl Responder {
-    if !is_valid_email(&user.email) {
-        return HttpResponse::BadRequest().json("Invalid email format");
+    if let Some(ref email) = user.email {
+        if !is_valid_email(email) {
+            return HttpResponse::BadRequest().json("Invalid email format");
+        }
+
+        let users_collection = repo.get_users_collection();
+        let filter = doc! { "email": email };
+        let existing_user = users_collection.find_one(filter, None).await;
+
+        if let Ok(Some(_)) = existing_user {
+            return HttpResponse::BadRequest().json("Email already in use");
+        }
     }
 
     let users_collection = repo.get_users_collection();
-    let filter = doc! { "email": &user.email };
+    let filter = doc! { "username": &user.username };
     let existing_user = users_collection.find_one(filter, None).await;
 
     match existing_user {
-        Ok(Some(_)) => HttpResponse::BadRequest().json("Email already in use"),
+        Ok(Some(_)) => HttpResponse::BadRequest().json("Username already in use"),
         Ok(None) => {
             let hashed_password = hash(&user.password, DEFAULT_COST).unwrap();
             let new_user = User {
@@ -41,10 +51,11 @@ async fn signup(repo: web::Data<MongoRepo>, user: web::Json<User>) -> impl Respo
     }
 }
 
+
 #[post("/login")]
 async fn login(repo: web::Data<MongoRepo>, credentials: web::Json<User>) -> impl Responder {
     let users_collection = repo.get_users_collection();
-    let filter = doc! { "email": &credentials.email };
+    let filter = doc! { "username": &credentials.username };
     let result = users_collection.find_one(filter, None).await;
 
     match result {
@@ -60,16 +71,4 @@ async fn login(repo: web::Data<MongoRepo>, credentials: web::Json<User>) -> impl
     }
 }
 
-#[actix_web::main]
-async fn main() -> std::io::Result<()> {
-    let mongo_repo = MongoRepo::init().await;
-    HttpServer::new(move || {
-        App::new()
-            .app_data(web::Data::new(mongo_repo.clone()))
-            .service(signup)
-            .service(login)
-    })
-        .bind("127.0.0.1:8080")?
-        .run()
-        .await
-}
+
