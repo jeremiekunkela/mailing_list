@@ -1,7 +1,8 @@
-use actix_web::{post, web, App, HttpServer, HttpResponse, Responder};
-use mongodb::bson::doc;
+use actix_web::{post, delete, web, HttpResponse, Responder};
+use mongodb::bson::{doc, oid::ObjectId};
 use bcrypt::{hash, DEFAULT_COST};
 use regex::Regex;
+use log::error;
 use crate::models::{User, MailingList};
 use crate::db::MongoRepo;
 
@@ -51,7 +52,6 @@ async fn signup(repo: web::Data<MongoRepo>, user: web::Json<User>) -> impl Respo
     }
 }
 
-
 #[post("/login")]
 async fn login(repo: web::Data<MongoRepo>, credentials: web::Json<User>) -> impl Responder {
     let users_collection = repo.get_users_collection();
@@ -71,4 +71,26 @@ async fn login(repo: web::Data<MongoRepo>, credentials: web::Json<User>) -> impl
     }
 }
 
+#[delete("/mailing_list/{id}")]
+async fn delete_mailing_list(repo: web::Data<MongoRepo>, mailing_list_id: web::Path<String>) -> impl Responder {
+    let mailing_lists_collection = repo.get_mailing_lists_collection();
+    let id = mailing_list_id.into_inner();
+    let object_id = match ObjectId::parse_str(&id) {
+        Ok(oid) => oid,
+        Err(_) => return HttpResponse::BadRequest().json("Invalid ID format"),
+    };
 
+    let filter = doc! { "_id": object_id };
+    let result = mailing_lists_collection.delete_one(filter, None).await;
+
+    match result {
+        Ok(delete_result) => {
+            if delete_result.deleted_count > 0 {
+                HttpResponse::Ok().json("Mailing list deleted successfully")
+            } else {
+                HttpResponse::NotFound().json("Mailing list not found")
+            }
+        },
+        Err(_) => HttpResponse::InternalServerError().finish(),
+    }
+}

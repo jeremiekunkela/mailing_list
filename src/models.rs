@@ -6,7 +6,7 @@ pub struct User {
     #[serde(rename = "_id", skip_serializing_if = "Option::is_none")]
     pub id: Option<ObjectId>,
     pub username: String,
-    #[serde(skip_serializing_if = "Option::is_none")]  // Rendre l'email optionnel
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub email: Option<String>,
     pub password: String,
 }
@@ -17,5 +17,5 @@ pub struct MailingList {
     pub id: Option<ObjectId>,
     pub list_name: String,
     pub owner: ObjectId,
-    pub subscribers: Vec<ObjectId>,
+    pub subscribers: Option<Vec<ObjectId>>,
 }
