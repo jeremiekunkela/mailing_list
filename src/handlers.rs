@@ -1,10 +1,10 @@
-use actix_web::{post, delete, web, HttpResponse, Responder};
+use actix_web::{delete, HttpResponse, post, Responder, web};
+use bcrypt::{DEFAULT_COST, hash};
 use mongodb::bson::{doc, oid::ObjectId};
-use bcrypt::{hash, DEFAULT_COST};
 use regex::Regex;
-use log::error;
-use crate::models::{User, MailingList};
+
 use crate::db::MongoRepo;
+use crate::models::User;
 
 fn is_valid_email(email: &str) -> bool {
     let email_regex = Regex::new(r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$").unwrap();

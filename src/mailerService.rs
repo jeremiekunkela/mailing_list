@@ -6,13 +6,12 @@ use std::string::{String, ToString};
 use std::sync::{Arc, Mutex};
 use std::thread;
 
-use axum::handler::Handler;
 use lettre::{
     Message,
     SmtpTransport, Transport, transport::smtp::authentication::Credentials,
 };
-use lettre::message::IntoBody;
 use lettre::transport::smtp::extension::ClientId;
+
 use mailparse::{MailHeaderMap, parse_mail, ParsedMail};
 
 fn wait_for_email(sender: &str, smtp_password: &str, recipients: Vec<&str>) {
