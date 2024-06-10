@@ -1,3 +1,4 @@
+use std::clone::Clone;
 use serde::{Deserialize, Serialize};
 use mongodb::bson::{doc, oid::ObjectId};
 
@@ -18,4 +19,17 @@ pub struct MailingList {
     pub list_name: String,
     pub owner: ObjectId,
     pub subscribers: Option<Vec<ObjectId>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub smtp_key: Option<String>,
+}
+impl Clone for MailingList {
+    fn clone(&self) -> Self {
+        Self {
+            id: self.id.clone(),
+            list_name: self.list_name.clone(),
+            owner: self.owner.clone(),
+            subscribers: self.subscribers.clone(),
+            smtp_key: self.smtp_key.clone(),
+        }
+    }
 }

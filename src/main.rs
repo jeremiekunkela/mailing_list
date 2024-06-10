@@ -1,3 +1,5 @@
+extern crate alloc;
+
 mod models;
 mod db;
 mod handlers;
