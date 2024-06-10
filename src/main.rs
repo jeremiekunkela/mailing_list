@@ -1,6 +1,7 @@
 mod models;
 mod db;
 mod handlers;
+mod mailerService;
 
 use actix_web::{web, App, HttpServer};
 use crate::db::MongoRepo;
