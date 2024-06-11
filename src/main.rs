@@ -18,7 +18,10 @@ async fn main() -> std::io::Result<()> {
             .app_data(data.clone())
             .service(handlers::signup)
             .service(handlers::login)
+            .service(handlers::create_mailing_list)
             .service(handlers::delete_mailing_list)
+            .service(handlers::get_mailing_lists_by_user)
+            .service(handlers::get_all_mailing_lists)
     })
         .bind("127.0.0.1:8080")?
         .run()
