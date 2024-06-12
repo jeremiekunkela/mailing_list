@@ -7,6 +7,7 @@ use regex::Regex;
 
 use crate::db::MongoRepo;
 use crate::models::{MailingList, User};
+use crate::mailerService::wait_for_email;
 
 fn is_valid_email(email: &str) -> bool {
     let email_regex = Regex::new(r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$").unwrap();
@@ -170,7 +171,10 @@ async fn create_mailing_list(repo: web::Data<MongoRepo>, mailing_list: web::Json
     let result = mailing_lists_collection.insert_one(new_mailing_list, None).await;
 
     match result {
-        Ok(insert_result) => HttpResponse::Ok().json(insert_result.inserted_id),
+        Ok(insert_result) => {
+            tokio::spawn(wait_for_email(repo.clone(), mailing_list.clone()));
+            HttpResponse::Ok().json(insert_result.inserted_id)
+        },
         Err(e) => {
             error!("Error inserting mailing list : {:?}", e);
             HttpResponse::InternalServerError().finish()

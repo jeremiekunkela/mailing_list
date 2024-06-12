@@ -6,6 +6,7 @@ use std::result::Result::{Err, Ok};
 use std::string::{String, ToString};
 use std::sync::{Arc, Mutex};
 use std::thread;
+use actix_web::web::Data;
 use lettre::{
     Message,
     SmtpTransport, Transport, transport::smtp::authentication::Credentials,
@@ -15,7 +16,7 @@ use crate::models::{MailingList, User};
 use crate::db::MongoRepo;
 use mailparse::{MailHeaderMap, parse_mail, ParsedMail};
 
-async fn wait_for_email(repo: MongoRepo, mailing_list: MailingList) {
+pub(crate) async fn wait_for_email(repo: Data<MongoRepo>, mailing_list: MailingList) {
     let owner_id = mailing_list.owner;
     let owner: User = match repo.get_user_by_id(owner_id) {
         Ok(Some(user)) => user,
@@ -58,7 +59,7 @@ async fn wait_for_email(repo: MongoRepo, mailing_list: MailingList) {
                         if !email.is_empty() {
                             let uids = session_lock.search("ALL")?;
                             let new_email_uid = uids.iter().max();
-                            if  last_email_uid_lock.is_none() || last_email_uid_lock.unwrap() != new_email_uid.copied().unwrap() {
+                            if last_email_uid_lock.is_none() || last_email_uid_lock.unwrap() != new_email_uid.copied().unwrap() {
                                 if let Some(subscribers) = repo_clone.get_mailing_list_by_id(mailing_list_clone.id.unwrap()).unwrap().unwrap().subscribers {
                                     for subscriber in subscribers {
                                         let user = repo_clone.get_user_by_id(subscriber);
@@ -83,7 +84,7 @@ async fn wait_for_email(repo: MongoRepo, mailing_list: MailingList) {
                 Err(e) => eprintln!("Error in IDLE: {}", e),
             }
             Ok(())
-        }).join().unwrap();
+        }).join().unwrap().expect("Error while waiting for email");
     }
 }
 
